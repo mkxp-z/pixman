@@ -23,7 +23,7 @@ project(
   ['c'],
   version : '0.40.1',
   license : 'MIT',
-  meson_version : '>= 0.50.0',
+  meson_version : '>= 0.52.0',
   default_options : ['buildtype=debugoptimized'],
 )
 
@@ -281,6 +281,22 @@ elif use_neon.enabled()
   error('NEON Support unavailable, but required')
 endif
 
+use_a64neon = get_option('a64-neon')
+have_a64neon = false
+if not use_a64neon.disabled()
+  if host_machine.cpu_family() == 'aarch64'
+    if cc.compiles(files('a64-neon-test.S'), name : 'NEON A64 Intrinsic Support')
+      have_a64neon = true
+    endif
+  endif
+endif
+
+if have_a64neon
+  config.set10('USE_ARM_A64_NEON', true)
+elif use_a64neon.enabled()
+  error('A64 NEON Support unavailable, but required')
+endif
+
 use_iwmmxt = get_option('iwmmxt')
 have_iwmmxt = false
 iwmmxt_flags = ['-flax-vector-conversions', '-Winline']
@@ -396,7 +412,7 @@ else
   dep_openmp = null_dep
 endif
 
-dep_gtk = dependency('gtk+-2.0', version : '>= 2.16', required : get_option('gtk'))
+dep_gtk = dependency('gtk+-3.0', required : get_option('gtk'))
 dep_glib = dependency('glib-2.0', required : get_option('gtk'))
 
 dep_png = null_dep
@@ -539,11 +555,10 @@ if not get_option('tests').disabled()
 endif
 
 pkg = import('pkgconfig')
-pkg.generate(
+pkg.generate(libpixman,
   name : 'Pixman',
   filebase : 'pixman-1',
   description : 'The pixman library (version 1)',
-  libraries : libpixman,
   subdirs: 'pixman-1',
   version : meson.project_version(),
 )

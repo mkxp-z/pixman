@@ -54,6 +54,8 @@ simds = [
    ['pixman-arm-simd-asm.S', 'pixman-arm-simd-asm-scaled.S']],
   ['arm-neon', have_neon, [],
    ['pixman-arm-neon-asm.S', 'pixman-arm-neon-asm-bilinear.S']],
+  ['arm-neon', have_a64neon, [],
+   ['pixman-arma64-neon-asm.S', 'pixman-arma64-neon-asm-bilinear.S']],
   ['mips-dspr2', have_mips_dspr2, mips_dspr2_flags,
    ['pixman-mips-dspr2-asm.S', 'pixman-mips-memcpy-asm.S']],
 ]
@@ -115,17 +117,10 @@ if cpu_features_path != ''
   cpu_features_inc = include_directories(cpu_features_path)
 endif
 
-# We cannot use 'link_with' or 'link_whole' because meson wont do the right
-# thing for static archives.
-_obs = []
-foreach l : pixman_simd_libs
-  _obs += l.extract_all_objects()
-endforeach
-
 libpixman = library(
   'pixman-1',
   [pixman_files, config_h, version_h, cpu_features_sources],
-  objects : _obs,
+  link_with: pixman_simd_libs,
   c_args : libpixman_extra_cargs,
   dependencies : [dep_m, dep_threads],
   include_directories : cpu_features_inc,
